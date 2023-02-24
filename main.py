@@ -13,29 +13,43 @@ class Eye:
         self.size = size
         with open("blink.raw", "rb") as f:
             self.lids = bytearray(f.read(size[0] * size[1]))
-        self.blinklvl = 0x40
+        self.blinklvl = 0x60
         self.blinking = False
         self.buffer = bytearray(size[0] * size[1] * 2)
         self.fb = FrameBuffer(self.buffer, self.size[0], self.size[1], RGB565)
+        self.curlids = bytearray(self.size[0] * self.size[1])
+        self.lidsfb = FrameBuffer(self.curlids, self.size[0], self.size[1], GS8)
+        self.prvblnklvl = 0
     
     def update(self, look=(0,0)):
-        if self.blinking and self.blinklvl < 0xCC:
-            self.blinklvl += 0x40
-        elif self.blinking and self.blinklvl >= 0xCC:
+        if self.blinking and self.blinklvl < 0xEE:
+            self.blinklvl += 0x20
+        elif self.blinking and self.blinklvl >= 0xEE:
             self.blinking = False
-        elif not self.blinking and self.blinklvl > 0x40:
-            self.blinklvl -= 0x40
+        elif not self.blinking and self.blinklvl > 0x60:
+            self.blinklvl -= 0x20
         
-        curlids = bytearray(self.size[0] * self.size[1])
-        for i in range(len(self.lids)):
-            curlids[i] = 0xFF if self.lids[i] > self.blinklvl else 0x00
-        lidsfb = FrameBuffer(curlids, self.size[0], self.size[1], GS8)
+        #for i in range(16384): # iterating through all pixels was too slow
+        #    self.curlids[i] = 0xFF if self.lids[i] >= self.blinklvl else 0x00
+        
+        if self.blinklvl != self.prvblnklvl:
+            self.lidsfb.fill(0)
+            up0cnt, dwn0cnt = 0, 0
+            for i in range(11400): # reduce to 11400 or less (was 11712)
+                if up0cnt <= 128:
+                    self.curlids[11711-i] = 0xFF if self.lids[11711-i] >= self.blinklvl else 0x00
+                    up0cnt = up0cnt + 1 if self.curlids[11711-i] == 0 else 0
+                if dwn0cnt <= 128 and i+11712 < 16384:
+                    self.curlids[11712+i] = 0xFF if self.lids[11712+i] >= self.blinklvl else 0x00
+                    dwn0cnt = dwn0cnt + 1 if self.curlids[11712+i] == 0 else 0
+                if up0cnt >= 128 and dwn0cnt >= 128: break
+            self.prvblnklvl = self.blinklvl
         
         self.fb.fill(65503)
         self.fb.ellipse(64+int(look[0]*24),64+int(look[1]*24),39,39,16706,True)
         self.fb.ellipse(64+int(look[0]*24),64+int(look[1]*24),15,15,0,True)
         
-        self.fb.blit(lidsfb,0,0,0xFF,GS8)
+        self.fb.blit(self.lidsfb,0,0,0xFF,GS8)
         self.display.block(0,0,self.size[0]-1,self.size[1]-1,self.buffer)
 
 def main():
