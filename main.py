@@ -23,19 +23,16 @@ class Eye:
     
     def update(self, look=(0,0)):
         if self.blinking and self.blinklvl < 0xEE:
-            self.blinklvl += 0x20
+            self.blinklvl += 0x50
         elif self.blinking and self.blinklvl >= 0xEE:
             self.blinking = False
         elif not self.blinking and self.blinklvl > 0x60:
-            self.blinklvl -= 0x20
-        
-        #for i in range(16384): # iterating through all pixels was too slow
-        #    self.curlids[i] = 0xFF if self.lids[i] >= self.blinklvl else 0x00
+            self.blinklvl -= 0xa0
         
         if self.blinklvl != self.prvblnklvl:
             self.lidsfb.fill(0)
             up0cnt, dwn0cnt = 0, 0
-            for i in range(11400): # reduce to 11400 or less (was 11712)
+            for i in range(11420): # (from center to top -> 11712) reduce to widest open eye position
                 if up0cnt <= 128:
                     self.curlids[11711-i] = 0xFF if self.lids[11711-i] >= self.blinklvl else 0x00
                     up0cnt = up0cnt + 1 if self.curlids[11711-i] == 0 else 0
@@ -46,8 +43,8 @@ class Eye:
             self.prvblnklvl = self.blinklvl
         
         self.fb.fill(65503)
-        self.fb.ellipse(64+int(look[0]*24),64+int(look[1]*24),39,39,16706,True)
-        self.fb.ellipse(64+int(look[0]*24),64+int(look[1]*24),15,15,0,True)
+        self.fb.ellipse(63+int(look[0]*24),64+int(look[1]*24),42,42,16706,True)
+        self.fb.ellipse(63+int(look[0]*28),64+int(look[1]*28),16,16,0,True)
         
         self.fb.blit(self.lidsfb,0,0,0xFF,GS8)
         self.display.block(0,0,self.size[0]-1,self.size[1]-1,self.buffer)
