@@ -8,17 +8,16 @@ def thumb2dir(thumbstick):
     return dir
 
 class Eye:
-    def __init__(self, display=None, size=(128,128)):
+    def __init__(self, display=None):  #, size=(128,128)
         self.display = display
-        self.size = size
         with open("blink.raw", "rb") as f:
-            self.lids = bytearray(f.read(size[0] * size[1]))
+            self.lids = bytearray(f.read(16384))
         self.blinklvl = 0x60
         self.blinking = False
-        self.buffer = bytearray(size[0] * size[1] * 2)
-        self.fb = FrameBuffer(self.buffer, self.size[0], self.size[1], RGB565)
-        self.curlids = bytearray(self.size[0] * self.size[1])
-        self.lidsfb = FrameBuffer(self.curlids, self.size[0], self.size[1], GS8)
+        self.buffer = bytearray(32768)
+        self.fb = FrameBuffer(self.buffer, 128, 128, RGB565)
+        self.curlids = bytearray(16384)
+        self.lidsfb = FrameBuffer(self.curlids, 128, 128, GS8)
         self.prvblnklvl = 0
     
     def update(self, look=(0,0)):
@@ -42,26 +41,24 @@ class Eye:
                 if up0cnt >= 128 and dwn0cnt >= 128: break
             self.prvblnklvl = self.blinklvl
         
-        self.fb.fill(65503)
-        self.fb.ellipse(63+int(look[0]*24),64+int(look[1]*24),42,42,16706,True)
-        self.fb.ellipse(63+int(look[0]*28),64+int(look[1]*28),16,16,0,True)
+        self.fb.fill(0xfade) # 0xdefa = 0xfade or 64222 # RGB888 = dedfd6
+        self.fb.ellipse(63+int(look[0]*24),64+int(look[1]*24),42,42,0x003,True) # 0x0300 (swap low and high, so 0x003)
+        self.fb.ellipse(63+int(look[0]*28),64+int(look[1]*28),16,16,0,True) # alternatively try sqeezing the pupil horizontally for a cat eye effect
         
         self.fb.blit(self.lidsfb,0,0,0xFF,GS8)
-        self.display.block(0,0,self.size[0]-1,self.size[1]-1,self.buffer)
+        self.display.block(0,0,127,127,self.buffer)  #self.size[0]-1,self.size[1]-1
 
 def main():
-    screensize = (128,128) # currently only supports 128x128
-    
     spi = SPI(0, baudrate=14500000, sck=Pin(18), mosi=Pin(19))
     display = Display(spi, dc=Pin(16), cs=Pin(17), rst=Pin(20))
 
     thumbstick = (ADC(28), ADC(27), Pin(26,Pin.IN,Pin.PULL_UP))
-    eye1 = Eye(display, screensize)
+    eye = Eye(display)
     
     try:
         while True:
-            if thumbstick[2].value() == 0: eye1.blinking = True
-            eye1.update(thumb2dir(thumbstick))
+            if thumbstick[2].value() == 0: eye.blinking = True
+            eye.update(thumb2dir(thumbstick))
 
     finally:
         display.cleanup()
