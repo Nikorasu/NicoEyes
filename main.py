@@ -4,8 +4,7 @@ from ssd1351 import Display, color565
 
 def thumb2dir(thumbstick):
     x, y = thumbstick[0].read_u16(), thumbstick[1].read_u16()
-    dir = (0,0) if abs(x-32768) < 1000 and abs(y-32768) < 1000 else ((x-32768)/32768,(y-32768)/32768)
-    return dir
+    return (0,0) if abs(x-32768) < 1000 and abs(y-32768) < 1000 else ((x-32768)/32768,(y-32768)/32768)
 
 class Eye:
     def __init__(self, display=None):  #, size=(128,128)
@@ -21,12 +20,9 @@ class Eye:
         self.prvblnklvl = 0
     
     def update(self, look=(0,0)):
-        if self.blinking and self.blinklvl < 0xEE:
-            self.blinklvl += 0x50
-        elif self.blinking and self.blinklvl >= 0xEE:
-            self.blinking = False
-        elif not self.blinking and self.blinklvl > 0x60:
-            self.blinklvl -= 0xa0
+        if self.blinking and self.blinklvl < 0xEE: self.blinklvl += 0x50
+        elif self.blinking and self.blinklvl >= 0xEE: self.blinking = False
+        elif not self.blinking and self.blinklvl > 0x60: self.blinklvl -= 0xa0
         
         if self.blinklvl != self.prvblnklvl:
             self.lidsfb.fill(0)
