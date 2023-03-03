@@ -5,7 +5,7 @@ from ulab import numpy as np
 
 Temperature_Sensor = ADC(4)
 
-def check_temp(timer):
+def check_temp(timer):  # for debugging, to make sure overclock doesn't cause overheating
     temp = Temperature_Sensor.read_u16() * (3.3 / 65535)
     temp = 27 - (temp - 0.706)/0.001721
     print(f"Temperature: {temp:.1f}°C")
@@ -30,12 +30,12 @@ class Eye:
         self.blinklvl = 0x50
     
     def update(self, look=(0,0)):
-        if self.blinking and self.blinklvl < 0xEE: self.blinklvl += 0x30
-        elif self.blinking and self.blinklvl >= 0xEE: self.blinking = False
+        if self.blinking and self.blinklvl < 0xEE: self.blinklvl += 0x40
+        elif self.blinking and self.blinklvl > 0xEE: self.blinking = False
         elif not self.blinking and self.blinklvl > 0x50: self.blinklvl -= 0x40
         
-        upperlvl = self. blinklvl + look[1] * 0x20
-        lowerlvl = self. blinklvl - look[1] * 0x20
+        upperlvl = self.blinklvl + look[1] * 0x20
+        lowerlvl = 0x20 + self.blinklvl - look[1] * 0x20
         
         smlids = np.where(self.upper >= upperlvl, 0xFF, 0x00)
         smlids = np.where(self.lower >= lowerlvl, smlids, 0x00)
@@ -47,17 +47,17 @@ class Eye:
         self.curlids[1:128:2,1:128:2] = smlids
         self.curlids = self.curlids.reshape((16384,))
         
-        self.fb.fill(0xfade) # 0xdefa = 0xfade or 64222 # RGB888 = dedfd6
-        self.fb.ellipse(63+int(look[0]*24),64+int(look[1]*24),42,42,0x003,True) # 0x0300 (swap low and high, so 0x003)
-        self.fb.ellipse(63+int(look[0]*28),64+int(look[1]*28),16,16,0,True) # alternatively try sqeezing the pupil horizontally for a cat eye effect
+        self.fb.fill(0xfade) # (swap 0xAABB to 0xBBAA) 0xdefa = 0xfade or 64222
+        self.fb.ellipse(63+int(look[0]*24),64+int(look[1]*24),42,42,0x00CC,True) # Green:0x0300 Orange:0xCC00
+        self.fb.ellipse(63+int(look[0]*28),64+int(look[1]*28),8,24,0,True) # cat eye
         
         self.fb.blit(self.lidsfb,0,0,0xFF,GS8)
         self.display.block(0,0,127,127,self.buffer)  #self.size[0]-1,self.size[1]-1
 
 def main():
-    freq(250_000_000) # overclocks pico to 250 MHz
+    freq(200_000_000) # overclocks pico to 200 MHz
     
-    spi = SPI(0, baudrate=14500000, sck=Pin(18), mosi=Pin(19))
+    spi = SPI(0, baudrate=16_000_000, sck=Pin(18), mosi=Pin(19)) #14_500_000
     display = Display(spi, dc=Pin(16), cs=Pin(17), rst=Pin(20))
 
     thumbstick = (ADC(28), ADC(27), Pin(26,Pin.IN,Pin.PULL_UP))
@@ -71,7 +71,7 @@ def main():
     finally:
         freq(125_000_000) # reset back to 125 MHz
         display.cleanup()
-        TempMonitor.deinit()
+        TempMonitor.deinit()  # debug
 
 if __name__ == '__main__':
     main() # by Nik
