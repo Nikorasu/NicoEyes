@@ -1,5 +1,5 @@
 from framebuf import FrameBuffer, GS8, RGB565
-from machine import ADC, Pin, SPI
+from machine import ADC, Pin, SPI, freq
 from ssd1351 import Display, color565
 
 def thumb2dir(thumbstick):
@@ -45,7 +45,9 @@ class Eye:
         self.display.block(0,0,127,127,self.buffer)  #self.size[0]-1,self.size[1]-1
 
 def main():
-    spi = SPI(0, baudrate=14500000, sck=Pin(18), mosi=Pin(19))
+    #freq(200_000_000) # overclocks pico to 200 MHz
+    
+    spi = SPI(0, baudrate=24000000, sck=Pin(18), mosi=Pin(19))
     display = Display(spi, dc=Pin(16), cs=Pin(17), rst=Pin(20))
 
     thumbstick = (ADC(28), ADC(27), Pin(26,Pin.IN,Pin.PULL_UP))
@@ -57,6 +59,7 @@ def main():
             eye.update(thumb2dir(thumbstick))
 
     finally:
+        #freq(125_000_000) # reset back to 125 MHz
         display.cleanup()
 
 if __name__ == '__main__':

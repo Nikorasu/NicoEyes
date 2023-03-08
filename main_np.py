@@ -31,7 +31,7 @@ class Eye:
     
     def update(self, look=(0,0)):
         if self.blinking and self.blinklvl < 0xEE: self.blinklvl += 0x40
-        elif self.blinking and self.blinklvl > 0xEE: self.blinking = False
+        elif self.blinking and self.blinklvl >= 0xEE: self.blinking = False
         elif not self.blinking and self.blinklvl > 0x50: self.blinklvl -= 0x40
         
         upperlvl = self.blinklvl + look[1] * 0x20
@@ -48,7 +48,7 @@ class Eye:
         self.curlids = self.curlids.reshape((16384,))
         
         self.fb.fill(0xfade) # (swap 0xAABB to 0xBBAA) 0xdefa = 0xfade or 64222
-        self.fb.ellipse(63+int(look[0]*24),64+int(look[1]*24),42,42,0x00CC,True) # Green:0x0300 Orange:0xCC00
+        self.fb.ellipse(63+int(look[0]*24),64+int(look[1]*24),42,42,0x0003,True) # Green:0x0300 Orange:0xCC00
         self.fb.ellipse(63+int(look[0]*28),64+int(look[1]*28),8,24,0,True) # cat eye
         
         self.fb.blit(self.lidsfb,0,0,0xFF,GS8)
@@ -57,7 +57,7 @@ class Eye:
 def main():
     freq(200_000_000) # overclocks pico to 200 MHz
     
-    spi = SPI(0, baudrate=16_000_000, sck=Pin(18), mosi=Pin(19)) #14_500_000
+    spi = SPI(0, baudrate=24_000_000, sck=Pin(18), mosi=Pin(19))
     display = Display(spi, dc=Pin(16), cs=Pin(17), rst=Pin(20))
 
     thumbstick = (ADC(28), ADC(27), Pin(26,Pin.IN,Pin.PULL_UP))
