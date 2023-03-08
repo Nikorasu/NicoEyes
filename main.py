@@ -1,3 +1,7 @@
+# NicoEyes - A simplified Uncanny Eyes clone for MicroPython
+# This original version is for standard MicroPython, without ulab.
+# The eyelids are more static in this version and the blink is like 1 frame.
+
 from framebuf import FrameBuffer, GS8, RGB565
 from machine import ADC, Pin, SPI, freq
 from ssd1351 import Display, color565
@@ -38,7 +42,7 @@ class Eye:
             self.prvblnklvl = self.blinklvl
         
         self.fb.fill(0xfade) # 0xdefa = 0xfade or 64222 # RGB888 = dedfd6
-        self.fb.ellipse(63+int(look[0]*24),64+int(look[1]*24),42,42,0x003,True) # 0x0300 (swap low and high, so 0x003)
+        self.fb.ellipse(63+int(look[0]*24),64+int(look[1]*24),42,42,0x2004,True) # 0x0300 (swap low and high, so 0x003)
         self.fb.ellipse(63+int(look[0]*28),64+int(look[1]*28),16,16,0,True) # alternatively try sqeezing the pupil horizontally for a cat eye effect
         
         self.fb.blit(self.lidsfb,0,0,0xFF,GS8)

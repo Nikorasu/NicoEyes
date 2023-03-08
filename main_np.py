@@ -1,3 +1,7 @@
+# NicoEyes - A clone of Adafruit's Uncanny Eyes, for MicroPython.
+# This is the ulab-Numpy version, and requires the ulab build of MicroPython!
+# The eyelids are separate & dynamicly follow the eye movement, with better blink animation.
+
 from machine import ADC, Pin, SPI, freq, Timer
 from framebuf import FrameBuffer, GS8, RGB565
 from ssd1351 import Display, color565
@@ -48,7 +52,7 @@ class Eye:
         self.curlids = self.curlids.reshape((16384,))
         
         self.fb.fill(0xfade) # (swap 0xAABB to 0xBBAA) 0xdefa = 0xfade or 64222
-        self.fb.ellipse(63+int(look[0]*24),64+int(look[1]*24),42,42,0x0003,True) # Green:0x0300 Orange:0xCC00
+        self.fb.ellipse(63+int(look[0]*24),64+int(look[1]*24),42,42,0x2004,True) # DarkGreen:0x0300 Orange:0xCC00
         self.fb.ellipse(63+int(look[0]*28),64+int(look[1]*28),8,24,0,True) # cat eye
         
         self.fb.blit(self.lidsfb,0,0,0xFF,GS8)
